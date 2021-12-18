@@ -8,18 +8,17 @@ const Header = () => {
   const { user, authenticate, isWeb3Enabled, logout, isLoggingOut } =
     useMoralis();
 
-  console.log(user, isWeb3Enabled);
-
   return (
     <Box
       bg={colorMode == "light" ? "white" : "gray.600"}
       p={4}
       display="flex"
+      flexDir={["column", "row"]}
       alignItems="center"
     >
       <Text fontSize="3xl">AmeerSwap</Text>
       <Spacer />
-      <Box display="flex">
+      <Box display="flex" mt={["4", "0"]}>
         {user?.id ? (
           <Button
             onClick={logout}

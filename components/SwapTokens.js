@@ -1,17 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOneInchTokens } from "react-moralis";
 
 // components
 import {
   Box,
   Button,
-  Icon,
   Image,
   Input,
   Menu,
   MenuButton,
-  MenuItem,
-  MenuList,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -22,34 +19,52 @@ import {
   Text,
   useColorMode,
 } from "@chakra-ui/react";
+import TokenPrice from "./TokenPrice";
 
 // assets
 import {
   FaChevronDown as ChevronDownIcon,
   FaArrowDown as ArrowDownIcon,
 } from "react-icons/fa";
+import InputWithToToken from "./InputWithToToken";
+import SwapButton from "./SwapButton";
 
 const SwapTokens = ({ selectedChain }) => {
   const { colorMode } = useColorMode();
-  const { data, error } = useOneInchTokens({ chain: selectedChain });
 
   const [tokensModalOpen, setTokensModalOpen] = useState(false);
+  const [toAmount, setToAmount] = useState(0);
+  const [fromAmount, setFromAmount] = useState(0);
   const [nameFilter, setNameFilter] = useState("");
   const [type, setType] = useState("from");
   const [fromToken, setFromToken] = useState(null);
   const [toToken, setToToken] = useState(null);
+
+  const { data } = useOneInchTokens({ chain: selectedChain });
+
+  useEffect(() => {
+    setFromToken(null);
+    setFromAmount(0);
+    setToToken(null);
+    setToAmount(0);
+  }, [selectedChain]);
 
   const tokensList = data?.tokens;
 
   return (
     <Box
       bg={colorMode == "light" ? "white" : "gray.600"}
-      p="2"
+      p={"2"}
       mt="6"
-      w="400px"
+      w={["100%", "400px"]}
       borderRadius="lg"
     >
-      <Box display="flex" justifyItems="space-between">
+      {/* from Token and Amount */}
+      <Box
+        display="flex"
+        flexDir={["column", "row"]}
+        justifyItems="space-between"
+      >
         <Menu
           isLazy
           modifiers={{ name: "eventListeners", options: { scroll: false } }}
@@ -66,22 +81,29 @@ const SwapTokens = ({ selectedChain }) => {
           </MenuButton>
         </Menu>
         <Spacer />
-        <Input w="60%" />
+        <Box w={["100%", "60%"]} mt={["4", "0"]}>
+          <Input
+            placeholder="Amount"
+            value={fromAmount ? fromAmount : ""}
+            onChange={(e) => setFromAmount(e.target.value)}
+          />
+          {fromToken && fromAmount ? (
+            <TokenPrice
+              fromToken={fromToken}
+              amount={fromAmount}
+              selectedChain={selectedChain}
+            />
+          ) : null}
+        </Box>
       </Box>
 
-      {/* <Box
+      {/* to Token and Amount */}
+      <Box
         display="flex"
-        flexDir="column"
-        alignItems="center"
-        justifyItems="center"
-        w="100%"
-        mt="6"
-        mb="2"
+        flexDir={["column", "row"]}
+        justifyItems="space-between"
+        mt={fromToken && fromAmount ? "2" : "6"}
       >
-        <Icon as={ArrowDownIcon} width={30} height={30} />
-      </Box> */}
-
-      <Box display="flex" justifyItems="space-between" mt="5">
         <Menu>
           <MenuButton
             onClick={() => {
@@ -95,14 +117,50 @@ const SwapTokens = ({ selectedChain }) => {
           </MenuButton>
         </Menu>
         <Spacer />
-        <Input w="60%" />
+        <Box w={["100%", "60%"]} mt={["4", "0"]}>
+          {toToken ? (
+            <InputWithToToken
+              selectedChain={selectedChain}
+              fromToken={fromToken}
+              fromAmount={fromAmount}
+              toAmount={toAmount}
+              toToken={toToken}
+              setToAmount={setToAmount}
+            />
+          ) : (
+            <Input
+              value={toAmount ? toAmount : ""}
+              onChange={(e) => {}}
+              placeholder="Amount"
+            />
+          )}
+          {toToken && toAmount ? (
+            <TokenPrice
+              fromToken={toToken}
+              amount={toAmount}
+              selectedChain={selectedChain}
+            />
+          ) : null}
+        </Box>
       </Box>
 
-      <Button mt="4" isFullWidth={true}>
-        Swap
-      </Button>
+      {fromToken && fromAmount && toToken ? (
+        <SwapButton
+          fromToken={fromToken}
+          fromAmount={fromAmount}
+          toToken={toToken}
+          toAmount={toAmount}
+          selectedChain={selectedChain}
+        />
+      ) : null}
 
-      <Modal isOpen={tokensModalOpen} onClose={() => setTokensModalOpen(false)}>
+      <Modal
+        isOpen={tokensModalOpen}
+        onClose={() => {
+          setNameFilter("");
+          setTokensModalOpen(false);
+        }}
+      >
         <ModalOverlay />
         <ModalContent maxH="80vh" overflow="scroll">
           <ModalHeader>Choose Token</ModalHeader>
@@ -133,13 +191,17 @@ const SwapTokens = ({ selectedChain }) => {
                       borderRadius="lg"
                       cursor="pointer"
                       mb="2"
-                      _hover={{ backgroundColor: "gray.100" }}
+                      _hover={{
+                        backgroundColor:
+                          colorMode == "light" ? "gray.100" : "gray.600",
+                      }}
                       onClick={() => {
                         if (type == "from") {
                           setFromToken(tokensList[tokenKey]);
                         } else {
                           setToToken(tokensList[tokenKey]);
                         }
+                        setNameFilter("");
                         setTokensModalOpen(false);
                       }}
                     >
